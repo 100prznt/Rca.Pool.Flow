@@ -10,28 +10,16 @@ namespace Rca.Pool.Flow
         /// Innerer Rohrdurchmesser
         /// </summary>
         public PhysicalValue Diameter { get; set; }
-
-        /// <summary>
-        /// Rohrlänge
-        /// </summary>
-        public PhysicalValue Length { get; set; }
-
         /// <summary>
         /// Rohrquerschnitt
         /// </summary>
-        public PhysicalValue CrossArea
-        {
-            get
-            {
-                return new PhysicalValue(Math.PI * Math.Pow(Diameter.GetBaseValue(), 2) / 4, PhysicalDimensions.Area.GetBaseUnit());
-            }
-        }
+        public PhysicalValue CrossArea => new(Math.PI * Math.Pow(Diameter.GetBaseValue(), 2) / 4, PhysicalDimensions.Area.GetBaseUnit());
 
         /// <summary>
         /// EINGABE PARAMETER
         /// Volumenstrom
         /// </summary>
-        public PhysicalValue FlowRate { get; set; }
+        public PhysicalValue FlowRate { private get; set; }
 
         #endregion Properties
 
@@ -53,51 +41,29 @@ namespace Rca.Pool.Flow
             Diameter = di;
         }
 
-        /// <summary>
-        /// Konstruktor
-        /// </summary>
-        /// <param name="l">Rohrlänge</param>
-        /// <param name="di">Innerer Rohrdurchmesser</param>
-        public PipeBase(PhysicalValue di, PhysicalValue l)
-        {
-            Length = l;
-            Diameter = di;
-        }
-
         #endregion Constructor
 
         #region Services
         /// <summary>
         /// Strömungsgeschwindigkeit berechnen
         /// </summary>
-        /// <returns>Strömungsgeschwindigkeit in [m/s]</returns>
+        /// <returns>Strömungsgeschwindigkeit</returns>
         public PhysicalValue CalcFlowVelocity() => CalcFlowVelocity(FlowRate);
 
         /// <summary>
         /// Strömungsgeschwindigkeit berechnen
         /// </summary>
-        /// <param name="flowRate">Volumenstrom in [m^3/h]</param>
-        /// <returns>Strömungsgeschwindigkeit in [m/s]</returns>
-        public PhysicalValue CalcFlowVelocity(PhysicalValue flowRate)
-        {
-            //double q = flowRate / 3600; // [m^3/s]
-            //double a = CrossArea / 1E6; // [m^2]
-
-            return flowRate / CrossArea;
-        }
+        /// <param name="flowRate">Volumenstrom</param>
+        /// <returns>Strömungsgeschwindigkeit</returns>
+        public PhysicalValue CalcFlowVelocity(PhysicalValue flowRate) => flowRate / CrossArea;
 
         /// <summary>
         /// Volumenstrom berechnen
         /// </summary>
-        /// <param name="flowVelocity">Strömungsgeschwindigkeit in [m/s]</param>
-        /// <returns>Volumenstrom in [m^3/h]</returns>
-        public PhysicalValue CalcFlowRate(PhysicalValue flowVelocity)
-        {
-            //double a = CrossArea / 1E6; // [m^2]
-            //double q = ; // [m^3/s]
+        /// <param name="flowVelocity">Strömungsgeschwindigkeit</param>
+        /// <returns>Volumenstrom</returns>
+        public PhysicalValue CalcFlowRate(PhysicalValue flowVelocity) => flowVelocity * CrossArea;
 
-            return flowVelocity * CrossArea;
-        }
 
         #endregion Services
     }
