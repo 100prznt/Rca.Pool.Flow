@@ -19,7 +19,7 @@ namespace Rca.Pool.Flow
         /// EINGABE PARAMETER
         /// Volumenstrom
         /// </summary>
-        public PhysicalValue FlowRate { private get; set; }
+        public PhysicalValue FlowRate { private protected get; set; }
 
         #endregion Properties
 

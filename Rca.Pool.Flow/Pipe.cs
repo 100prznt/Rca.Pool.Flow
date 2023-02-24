@@ -68,7 +68,7 @@ namespace Rca.Pool.Flow
         /// </summary>
         /// <param name="medium">Stoffdaten</param>
         /// <returns>Druckverlust in [bar]</returns>
-        public double CalcPressureDrop(Medium medium) => CalcPressureDrop(medium, FlowRate);
+        public PhysicalValue CalcPressureDrop(Medium.Water medium) => CalcPressureDrop(medium, FlowRate);
 
         /// <summary>
         /// Druckverlust berechnen
@@ -77,12 +77,14 @@ namespace Rca.Pool.Flow
         /// <param name="medium">Stoffdaten</param>
         /// <param name="flowRate">Volumenstrom in [m^3/h]</param>
         /// <returns>Druckverlust in [bar]</returns>
-        public double CalcPressureDrop(Medium medium, double flowRate)
+        public PhysicalValue CalcPressureDrop(Medium.Water medium, PhysicalValue flowRate)
         {
-            double di = Diameter / 1000; // [m]
-            double k = Roughness / 1000; // [m]
-            double v = CalcFlowVelocity(flowRate); // [m/s]
-            double kv = medium.KineticViscosity / 1E6; // [m^2/s]
+            double di = Diameter.ValueAs(PhysicalUnits.Metre); // [m]
+            double k = Roughness.ValueAs(PhysicalUnits.Metre); // [m]
+            double l = Length.ValueAs(PhysicalUnits.Metre); // [m]
+            double rho = medium.Density.ValueAs(PhysicalUnits.KilogramPerCubicMetre);
+            double v = CalcFlowVelocity(flowRate).ValueAs(PhysicalUnits.MetrePerSecond); // [m/s]
+            double kv = medium.KineticViscosity.ValueAs(PhysicalUnits.SquareMetrePerSecond); // [m^2/s]
             double re = v * di / kv;
 
             // Rohrreibungszahl (Lambda) nach Colebrook und White siehe: https://de.wikipedia.org/wiki/Rohrreibungszahl
@@ -105,14 +107,11 @@ namespace Rca.Pool.Flow
                 lambda += s;
             }
 
-
             // Druckverlust durch Rohrreibung
             // https://www.schweizer-fn.de/stroemung/druckverlust/druckverlust.php#druckverlustrohr
-            double deltaP = lambda * Length * medium.Density * Math.Pow(v, 2) / (di * 2); // [Pa]
+            double deltaP = lambda * l * rho * Math.Pow(v, 2) / (di * 2); // [Pa]
 
-            double deltaP_Bar = deltaP / 1E5;
-
-            return deltaP_Bar;
+            return new(deltaP, PhysicalUnits.Pascal);
         }
 
         public override string ToString()
