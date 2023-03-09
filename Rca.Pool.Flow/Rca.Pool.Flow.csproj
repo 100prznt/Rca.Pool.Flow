@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -7,9 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Rca.Physical">
-      <HintPath>..\..\Rca.Physical\Rca.Physical\bin\Debug\net6.0\Rca.Physical.dll</HintPath>
-    </Reference>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Rca.Pool.Flow.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Rca.Physical" Version="1.0.45" />
+    <PackageReference Include="Rca.Physical.If97" Version="1.0.21" />
   </ItemGroup>
 
 </Project>

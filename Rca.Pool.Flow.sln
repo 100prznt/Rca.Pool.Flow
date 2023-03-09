@@ -5,7 +5,7 @@ VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rca.Pool.Flow", "Rca.Pool.Flow\Rca.Pool.Flow.csproj", "{DDDCF64B-374A-47BD-91E8-482CFB9605AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rca.Pool.Flow.Tests", "Rca.Pool.Flow.Tests\Rca.Pool.Flow.Tests.csproj", "{CCC64DF7-BD7C-49ED-B048-ADEC15623F2A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rca.Pool.Flow.Tests", "Rca.Pool.Flow.Tests\Rca.Pool.Flow.Tests.csproj", "{CCC64DF7-BD7C-49ED-B048-ADEC15623F2A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
