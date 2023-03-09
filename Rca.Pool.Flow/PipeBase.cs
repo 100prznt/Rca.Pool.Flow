@@ -1,23 +1,34 @@
 ﻿using Rca.Physical;
 using Rca.Physical.Dimensions;
+using Rca.Physical.Helpers;
+using System.Diagnostics;
 
 namespace Rca.Pool.Flow
 {
-    public class PipeBase
+    /// <summary>
+    /// Base class for pipes and other components with circular cross-section for which flow is possible.
+    /// </summary>
+    [DebuggerDisplay("{DefaultFormattedValue, nq}")]
+    public abstract class PipeBase
     {
+
+        #region Fields
+        protected string DefaultFormattedValue => $"d = {Diameter?.ToString(true, "N2")}; a = {CrossArea?.ToString(true, "N2")}; Q = {FlowRate?.ToString(true, "N2")}";
+
+        #endregion Fields
+
         #region Properties
         /// <summary>
-        /// Innerer Rohrdurchmesser
+        /// Inner pipe diameter
         /// </summary>
         public PhysicalValue Diameter { get; set; }
         /// <summary>
-        /// Rohrquerschnitt
+        /// Pipe cross area
         /// </summary>
         public PhysicalValue CrossArea => new(Math.PI * Math.Pow(Diameter.GetBaseValue(), 2) / 4, PhysicalDimensions.Area.GetBaseUnit());
 
         /// <summary>
-        /// EINGABE PARAMETER
-        /// Volumenstrom
+        /// Volumetric flow rate
         /// </summary>
         public PhysicalValue FlowRate { private protected get; set; }
 
@@ -25,18 +36,19 @@ namespace Rca.Pool.Flow
 
         #region Constructor
         /// <summary>
-        /// Konstruktor
+        /// Default constructor
         /// </summary>
         public PipeBase()
         {
-
+            Diameter = PhysicalValue.NaN;
+            FlowRate = PhysicalValue.NaN;
         }
 
         /// <summary>
-        /// Konstruktor
+        /// Default constructor
         /// </summary>
-        /// <param name="di">Innerer Rohrdurchmesser</param>
-        public PipeBase(PhysicalValue di)
+        /// <param name="di">Inner pipe diameter</param>
+        public PipeBase(PhysicalValue di) : this()
         {
             Diameter = di;
         }

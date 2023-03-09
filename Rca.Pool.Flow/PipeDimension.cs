@@ -75,6 +75,26 @@ namespace Rca.Pool.Flow
         [Description("Die Rohrrauheit beschreibt die Unebenheit der Rohrinnenoberfläche. Der Wert drückt vereinfacht die Differenz zwischen vorhandenen Erhöhungen und Vertiefungen aus.")]
         public PhysicalValue Roughness { get; set; }
 
+
+
+
+        /// <summary>
+        /// Width of the space between two corrugations on the inside of the tube
+        /// </summary>
+        public PhysicalValue InnerWaveSpace { get; set; }
+
+        /// <summary>
+        /// Distance between two waves (= space + wave)
+        /// </summary>
+        public PhysicalValue WaveDistance { get; set; }
+
+        /// <summary>
+        /// Wave height
+        /// </summary>
+        public PhysicalValue WaveHeight { get; set; }
+
+
+
         /// <summary>
         /// Nendruck (PN)
         /// </summary>

@@ -1,13 +1,19 @@
 ﻿using Rca.Physical;
+using Rca.Physical.If97;
 using Rca.Pool.Flow;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Rca.Pool.Flow
 {
+    /// <summary>
+    /// Represents a piece of piping
+    /// </summary>
+    [DebuggerDisplay("{DefaultFormattedValue, nq}")]
     public class Pipe : PipeBase
     {
         #region Member
@@ -15,14 +21,19 @@ namespace Rca.Pool.Flow
 
         #endregion Member
 
+        #region Fields
+        protected new string DefaultFormattedValue => $"{base.DefaultFormattedValue}; l = {Length?.ToString(true, "N2")}; k = {Roughness?.ToString(true, "N2")}";
+
+        #endregion Fields
+
         #region Properties
         /// <summary>
-        /// Rohrlänge
+        /// Pipe length
         /// </summary>
         public PhysicalValue Length { get; set; }
 
         /// <summary>
-        /// Rohrrauheit
+        /// Roughness of the inner pipe side
         /// </summary>
         public PhysicalValue Roughness { get; set; }
 
@@ -32,27 +43,28 @@ namespace Rca.Pool.Flow
         /// <summary>
         /// Konstruktor
         /// </summary>
-        public Pipe() :base()
+        public Pipe()
+        {
+            Length = PhysicalValue.NaN;
+            Roughness = PhysicalValue.NaN;
+        }
+
+        /// <summary>
+        /// Constructor for new instance of <see cref="Pipe"/>
+        /// </summary>
+        /// <param name="l">Pipe length</param>
+        /// <param name="dimensions">Pipe definition</param>
+        public Pipe(PhysicalValue l, PipeDimension dimensions) : this(l, dimensions.InnerDiameter, dimensions.Roughness)
         {
 
         }
 
         /// <summary>
-        /// Konstruktor
+        /// Constructor for new instance of <see cref="Pipe"/>
         /// </summary>
-        /// <param name="l">Rohrlängein [m]</param>
-        /// <param name="pipeDimension">Rohrdefinition</param>
-        public Pipe(PhysicalValue l, PipeDimension pipeDimension) : this(l, pipeDimension.InnerDiameter, pipeDimension.Roughness)
-        {
-
-        }
-
-        /// <summary>
-        /// Konstruktor
-        /// </summary>
-        /// <param name="l">Rohrlänge</param>
-        /// <param name="di">Innerer Rohrdurchmesser</param>
-        /// <param name="k">Rohrrauheit</param>
+        /// <param name="l">Pipe length</param>
+        /// <param name="di">Inner pipe diameter</param>
+        /// <param name="k">Roughness of the pipe</param>
         public Pipe(PhysicalValue di, PhysicalValue l, PhysicalValue k) : base(di)
         {
             Length = l;
@@ -63,35 +75,35 @@ namespace Rca.Pool.Flow
 
         #region Services
         /// <summary>
-        /// Druckverlust berechnen
-        /// (es wird von einer turbulenten Strömung ausgegangen)
+        /// Calculate pressure drop
+        /// (turbulent flow is assumed)
         /// </summary>
-        /// <param name="medium">Stoffdaten</param>
-        /// <returns>Druckverlust in [bar]</returns>
-        public PhysicalValue CalcPressureDrop(Medium.Water medium) => CalcPressureDrop(medium, FlowRate);
+        /// <param name="medium">Medium properties</param>
+        /// <returns>Pressure drop</returns>
+        public PhysicalValue CalcPressureDrop(Water medium) => CalcPressureDrop(medium, FlowRate);
 
         /// <summary>
-        /// Druckverlust berechnen
-        /// (es wird von einer turbulenten Strömung ausgegangen)
+        /// Calculate pressure drop
+        /// (turbulent flow is assumed)
         /// </summary>
-        /// <param name="medium">Stoffdaten</param>
-        /// <param name="flowRate">Volumenstrom in [m^3/h]</param>
-        /// <returns>Druckverlust in [bar]</returns>
-        public PhysicalValue CalcPressureDrop(Medium.Water medium, PhysicalValue flowRate)
+        /// <param name="medium">Medium properties</param>
+        /// <param name="flowRate">Flowrate (volumetric)</param>
+        /// <returns>Pressure drop</returns>
+        public PhysicalValue CalcPressureDrop(Water medium, PhysicalValue flowRate)
         {
-            double di = Diameter.ValueAs(PhysicalUnits.Metre); // [m]
-            double k = Roughness.ValueAs(PhysicalUnits.Metre); // [m]
-            double l = Length.ValueAs(PhysicalUnits.Metre); // [m]
-            double rho = medium.Density.ValueAs(PhysicalUnits.KilogramPerCubicMetre);
-            double v = CalcFlowVelocity(flowRate).ValueAs(PhysicalUnits.MetrePerSecond); // [m/s]
-            double kv = medium.KineticViscosity.ValueAs(PhysicalUnits.SquareMetrePerSecond); // [m^2/s]
-            double re = v * di / kv;
+            var di = Diameter.ValueAs(PhysicalUnits.Metre); // [m]
+            var k = Roughness.ValueAs(PhysicalUnits.Metre); // [m]
+            var l = Length.ValueAs(PhysicalUnits.Metre); // [m]
+            var rho = medium.Density.ValueAs(PhysicalUnits.KilogramPerCubicMetre); //kg/m^3
+            var v = CalcFlowVelocity(flowRate).ValueAs(PhysicalUnits.MetrePerSecond); // [m/s]
+            var kv = medium.KineticViscosity.ValueAs(PhysicalUnits.SquareMetrePerSecond); // [m^2/s]
+            var re = v * di / kv; //Reynolds-Zahl https://de.wikipedia.org/wiki/Reynolds-Zahl
 
             // Rohrreibungszahl (Lambda) nach Colebrook und White siehe: https://de.wikipedia.org/wiki/Rohrreibungszahl
             // Iterative Berechnung
             double lambda = 0.005; // Startwert für Lambda
-            double s = 0.001; // Schrittweite für Antastung
-            int i = 7; // Anzahl der Richtungswechsel
+            double s = 0.001; // Schrittweite für Antastung (0.001)
+            int i = 7; // Anzahl der Richtungswechsel (7)
 
             double error = double.MaxValue - 1;
             while (i > 0)
@@ -101,11 +113,40 @@ namespace Rca.Pool.Flow
 
                 if (Math.Abs(error) >= Math.Abs(lastError))
                 {
-                    s /= -10;
+                    s /= -10; //-10
                     i--;
                 }
                 lambda += s;
             }
+
+
+            // Rohrreibungszahl (Lambda) nach Prandtl siehe: https://www.cosmos-indirekt.de//Physik-Schule/Rohrreibungszahl
+            // Iterative Berechnung
+            //lambda = 0.025; // Startwert für Lambda
+            //s = 0.0001; // Schrittweite für Antastung
+            //i = 100; // Anzahl der Richtungswechsel
+
+            //error = double.MaxValue - 1;
+            //while (i > 0)
+            //{
+            //    double lastError = error;
+            //    error = 1 / Math.Sqrt(lambda) - (-2 * Math.Log10(2.51 / (re * Math.Sqrt(lambda))));
+
+            //    if (Math.Abs(error) >= Math.Abs(lastError))
+            //    {
+            //        s /= -10;
+            //        i--;
+            //    }
+            //    lambda += s;
+            //}
+
+
+            //Alternative Formel prüfen:
+            //Blasius
+            //https://www.cosmos-indirekt.de//Physik-Schule/Rohrreibungszahl
+
+            //Näherungsformel für Wellrohr
+            //https://www.schweizer-fn.de/stroemung/druckverlust/druckverlust.php#lambda_wellrohr
 
             // Druckverlust durch Rohrreibung
             // https://www.schweizer-fn.de/stroemung/druckverlust/druckverlust.php#druckverlustrohr
@@ -116,7 +157,7 @@ namespace Rca.Pool.Flow
 
         public override string ToString()
         {
-            return $"{Length} m (d = {Diameter} mm, k = {Roughness} mm)";
+            return $"{Length.ToString(true, "N2")} (d = {Diameter.ToString(true, "N2")}, k = {Roughness.ToString(true, "N2")})";
         }
 
         #endregion Services
