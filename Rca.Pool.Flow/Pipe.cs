@@ -1,8 +1,12 @@
-﻿using Rca.Physical;
+﻿using FlowCalc.Mathematics;
+using Rca.Physical;
+using Rca.Physical.Dimensions;
 using Rca.Physical.If97;
 using Rca.Pool.Flow;
+using Rca.Pool.Flow.Mathematics;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -153,6 +157,38 @@ namespace Rca.Pool.Flow
             double deltaP = lambda * l * rho * Math.Pow(v, 2) / (di * 2); // [Pa]
 
             return new(deltaP, PhysicalUnits.Pascal);
+        }
+
+        public PhysicalValue CalcDiameterByPressureDrop(Water medium, PhysicalValue pressureDrop)
+        {
+
+            //Generate polynom di(deltaP)
+            var diInterval = Matlab.LinSpace(10, 60); //[mm]
+            var specDeltaPList = new List<double>();
+            foreach (var di in diInterval)
+            {
+                var specPipe = new Pipe(new PhysicalValue(di, PhysicalUnits.Millimetre), Length, Roughness);
+                specDeltaPList.Add(specPipe.CalcPressureDrop(medium, FlowRate).ValueAs(PhysicalUnits.Millibar));
+            }
+
+            var p_deltaP_di = Polynom.Polyfit(specDeltaPList.ToArray(), diInterval, 2);
+
+            var diFromPolynominal = p_deltaP_di.Polyval(pressureDrop.ValueAs(PhysicalUnits.Millibar)); //[mm]
+
+
+            var deltaP = pressureDrop.ValueAs(PhysicalUnits.Pascal); // [Pa]
+            var k = Roughness.ValueAs(PhysicalUnits.Metre); // [m]
+            var l = Length.ValueAs(PhysicalUnits.Metre); // [m]
+            var rho = medium.Density.ValueAs(PhysicalUnits.KilogramPerCubicMetre); //kg/m^3
+            var kv = medium.KineticViscosity.ValueAs(PhysicalUnits.SquareMetrePerSecond); // [m^2/s]
+
+
+
+
+
+            var deltaP_Specific = deltaP / (rho * l);
+
+            return PhysicalValue.NaN;
         }
 
         public override string ToString()

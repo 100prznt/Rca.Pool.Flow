@@ -13,7 +13,7 @@ namespace Rca.Pool.Flow
     {
 
         #region Fields
-        protected string DefaultFormattedValue => $"d = {Diameter?.ToString(true, "N2")}; a = {CrossArea?.ToString(true, "N2")}; Q = {FlowRate?.ToString(true, "N2")}";
+        protected string DefaultFormattedValue => $"d = {Diameter?.ToString(true, "N2")}; A = {CrossArea?.ToString(true, "N2")}; Q = {FlowRate?.ToString(true, "N2")}";
 
         #endregion Fields
 

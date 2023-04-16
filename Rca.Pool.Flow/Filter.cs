@@ -256,27 +256,5 @@ namespace Rca.Pool.Flow
 
             return eu;
         }
-
-        /// <summary>
-        /// Berechnung des Strömungsdruckabfall über dem Festbett
-        /// </summary>
-        /// <param name="deltaL">Länge des Festbettes [m]</param>
-        /// <param name="v">Leerrohrfluidgeschwindigkeit [m/s]</param>
-        /// <param name="rho_f">Fluiddichte [kg/m^3]</param>
-        /// <param name="d_p">Sauter-Durchmesser [m]</param>
-        /// <param name="psi">Porosität</param>
-        /// <param name="eu"></param>
-        /// <returns>Strömungsdruckabfall über dem Festbett [Pa]</returns>
-        /// <remarks>
-        /// Gleichung (12) Umgestellt nach Bück, Andreas/Wirth, Karl-Ernst (2019): L1.6 Druckverlust in durchströmten Schüttungen,
-        /// in: VDI-Wärmeatlas, 12. Aufl., Berlin/Heidelberg, Deutschland: Springer, [online] doi:10.1007/978-3-662-52989-8_79
-        ///</remarks>
-        internal double CalcPressureDrop(double deltaL, double v, double rho_f, double d_p, double psi, double eu)
-        {
-            //Gleichung (12) Umgestellt
-            double deltaP = eu / ((4.0 / 3.0) * (d_p / deltaL) * (Math.Pow(psi, 2) / (1.0 - psi)) * (1.0 / (rho_f * Math.Pow(v, 2))));
-
-            return deltaP;
-        }
     }
 }

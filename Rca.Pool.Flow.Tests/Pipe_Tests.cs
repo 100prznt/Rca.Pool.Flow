@@ -26,5 +26,24 @@ namespace Rca.Pool.Flow.Tests
             //Reference value from http://druckverlust.de)
             Assert.AreEqual(19.58311, result, 1E-2);
         }
+
+        [TestMethod]
+        public void CalcDiameterByPressureDrop_Test()
+        {
+            Pipe testPipe = new(PhysicalValue.NaN, Length, Roghness);
+            testPipe.FlowRate = new PhysicalValue(10, PhysicalUnits.CubicMetrePerHour);
+
+            var water = new Water();
+            water.UpdatePT(Pressure.FromStandardAtmospheres(1), ThermodynamicTemperature.FromCelsius(25));
+
+
+            testPipe.Diameter = new(42.5, PhysicalUnits.Millimetre);
+            var deltaP = testPipe.CalcPressureDrop(water, new PhysicalValue(10, PhysicalUnits.CubicMetrePerHour)).ValueAs(PhysicalUnits.Millibar);
+
+            var result = testPipe.CalcDiameterByPressureDrop(water, new PhysicalValue(26.75, PhysicalUnits.Millibar)).ValueAs(PhysicalUnits.Millimetre);
+
+            Assert.AreEqual(45, result, 3);
+
+        }
     }
 }
