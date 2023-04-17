@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -159,37 +160,63 @@ namespace Rca.Pool.Flow
             return new(deltaP, PhysicalUnits.Pascal);
         }
 
-        public PhysicalValue CalcDiameterByPressureDrop(Water medium, PhysicalValue pressureDrop)
-        {
 
-            //Generate polynom di(deltaP)
-            var diInterval = Matlab.LinSpace(10, 60); //[mm]
-            var specDeltaPList = new List<double>();
-            foreach (var di in diInterval)
+        public PhysicalValue CalcFlowRateByPressureDrop(Water medium, PhysicalValue pressureDrop)
+        {
+            if (pressureDrop.GetBaseValue() == 0)
+                return new PhysicalValue(0, PhysicalDimensions.VolumetricFlowRate.GetBaseUnit());
+            if (pressureDrop.GetBaseValue() < 0)
+                throw new ArgumentException("Pressure drop must be positive, current value are: " + pressureDrop);
+
+            var q = 8.5;
+            var s = 0.05;
+            var lastError = double.MaxValue;
+            var error = double.MaxValue - 1;
+            int i = 7; // Anzahl der Richtungswechsel (7)
+            PhysicalValue p = PhysicalValue.NaN;
+
+
+            while (i > 0)
             {
-                var specPipe = new Pipe(new PhysicalValue(di, PhysicalUnits.Millimetre), Length, Roughness);
-                specDeltaPList.Add(specPipe.CalcPressureDrop(medium, FlowRate).ValueAs(PhysicalUnits.Millibar));
+                lastError = error;
+
+                p = CalcPressureDrop(medium, new PhysicalValue(q, PhysicalUnits.CubicMetrePerHour));
+                error = (pressureDrop - p).GetBaseValue();
+
+                if (Math.Abs(error) >= Math.Abs(lastError))
+                {
+                    s /= -10;
+                    i--;
+                }
+                q += s;
+
             }
 
-            var p_deltaP_di = Polynom.Polyfit(specDeltaPList.ToArray(), diInterval, 2);
 
-            var diFromPolynominal = p_deltaP_di.Polyval(pressureDrop.ValueAs(PhysicalUnits.Millibar)); //[mm]
-
-
-            var deltaP = pressureDrop.ValueAs(PhysicalUnits.Pascal); // [Pa]
-            var k = Roughness.ValueAs(PhysicalUnits.Metre); // [m]
-            var l = Length.ValueAs(PhysicalUnits.Metre); // [m]
-            var rho = medium.Density.ValueAs(PhysicalUnits.KilogramPerCubicMetre); //kg/m^3
-            var kv = medium.KineticViscosity.ValueAs(PhysicalUnits.SquareMetrePerSecond); // [m^2/s]
-
-
-
-
-
-            var deltaP_Specific = deltaP / (rho * l);
-
-            return PhysicalValue.NaN;
+            return new PhysicalValue(q, PhysicalUnits.CubicMetrePerHour);
         }
+
+
+        public Polynom CalcPressureFlowPolynom(PhysicalValue qStart, PhysicalValue qEnd, Water medium)
+        {
+            //check dimensions
+
+            var qInterval = Matlab.LinSpace(qStart.ValueAs(PhysicalUnits.LitrePerMinute), qEnd.ValueAs(PhysicalUnits.LitrePerMinute));
+            var deltaPinterval = new List<double>();
+
+            foreach (var q in qInterval)
+            {
+                var specPipe = new Pipe(Diameter, Length, Roughness);
+                var specDeltaP = specPipe.CalcPressureDrop(medium, new PhysicalValue(q, PhysicalUnits.LitrePerMinute));
+
+                deltaPinterval.Add(specDeltaP.ValueAs(PhysicalUnits.Millibar));
+            }
+
+            var p_q_deltaP = Polynom.Polyfit(deltaPinterval.ToArray(), qInterval, 4); //LitrePerMinute  Millibar
+
+            return p_q_deltaP;
+        }
+
 
         public override string ToString()
         {
@@ -200,6 +227,12 @@ namespace Rca.Pool.Flow
 
         #region Internal services
 
+
+
+        private double CalcZeta(double deltaP, double rho, double v)
+        {
+            return 2 * (deltaP/(rho*Math.Pow(v,2)));
+        }
 
         #endregion Internal services
 

@@ -24,7 +24,7 @@ namespace Rca.Pool.Flow.Mathematics
 
             result.Add(startValue);
 
-            for (int i = 2; i < (count - 1); i++)
+            for (int i = 2; i < (count); i++)
                 result.Add(step * i);
 
             result.Add(endValue);

@@ -1,6 +1,7 @@
 using Rca.Physical;
 using Rca.Physical.Helpers;
 using Rca.Physical.If97;
+using Rca.Pool.Flow.Mathematics;
 
 namespace Rca.Pool.Flow.Tests
 {
@@ -28,21 +29,66 @@ namespace Rca.Pool.Flow.Tests
         }
 
         [TestMethod]
-        public void CalcDiameterByPressureDrop_Test()
+        public void CalcFlowRateByPressureDrop_Test1()
         {
-            Pipe testPipe = new(PhysicalValue.NaN, Length, Roghness);
-            testPipe.FlowRate = new PhysicalValue(10, PhysicalUnits.CubicMetrePerHour);
+            Pipe testPipe = new(new(50, PhysicalUnits.Millimetre), new(10, PhysicalUnits.Metre), Roghness);
 
             var water = new Water();
             water.UpdatePT(Pressure.FromStandardAtmospheres(1), ThermodynamicTemperature.FromCelsius(25));
 
+            var q = testPipe.CalcFlowRateByPressureDrop(water, new PhysicalValue(75, PhysicalUnits.Millibar));
 
-            testPipe.Diameter = new(42.5, PhysicalUnits.Millimetre);
-            var deltaP = testPipe.CalcPressureDrop(water, new PhysicalValue(10, PhysicalUnits.CubicMetrePerHour)).ValueAs(PhysicalUnits.Millibar);
+            Assert.AreEqual(13.041749046774402, q.ValueAs(PhysicalUnits.CubicMetrePerHour), 1E-4);
+        }
 
-            var result = testPipe.CalcDiameterByPressureDrop(water, new PhysicalValue(26.75, PhysicalUnits.Millibar)).ValueAs(PhysicalUnits.Millimetre);
+        [TestMethod]
+        public void CalcFlowRateByPressureDrop_Test2()
+        {
+            Pipe testPipe = new(new(40, PhysicalUnits.Millimetre), new(6, PhysicalUnits.Metre), Roghness);
 
-            Assert.AreEqual(45, result, 3);
+            var water = new Water();
+            water.UpdatePT(Pressure.FromStandardAtmospheres(1), ThermodynamicTemperature.FromCelsius(25));
+
+            var q = testPipe.CalcFlowRateByPressureDrop(water, new PhysicalValue(25, PhysicalUnits.Millibar));
+
+            Assert.AreEqual(5.2799588509471, q.ValueAs(PhysicalUnits.CubicMetrePerHour), 1E-4);
+        }
+
+        [TestMethod]
+        public void CalcFlowRateByPressureDrop_Test3()
+        {
+            Pipe testPipe = new(Diameter, Length, Roghness);
+
+            var water = new Water();
+            water.UpdatePT(Pressure.FromStandardAtmospheres(1), ThermodynamicTemperature.FromCelsius(25));
+
+            var q = testPipe.CalcFlowRateByPressureDrop(water, new PhysicalValue(19.58311, PhysicalUnits.Millibar));
+
+
+            Assert.AreEqual(10, q.ValueAs(PhysicalUnits.CubicMetrePerHour), 1E-2);
+        }
+
+
+        [TestMethod]
+        public void CalcFlowRateByPressureDrop_TestX()
+        {
+            Pipe pipe5 = new(Diameter, new PhysicalValue(5, PhysicalUnits.Metre), Roghness);
+            Pipe pipe10 = new(Diameter, new PhysicalValue(10, PhysicalUnits.Metre), Roghness);
+            var water = new Water();
+            water.UpdatePT(Pressure.FromStandardAtmospheres(1), ThermodynamicTemperature.FromCelsius(25));
+
+            var pInterval = Matlab.LinSpace(0, 250);
+
+            using var sw = new StreamWriter("ouput.csv");
+            sw.WriteLine($"p;Q5;Q10;Q_sum");
+            foreach (var p in pInterval)
+            {
+                var q1 = pipe5.CalcFlowRateByPressureDrop(water, new PhysicalValue(p, PhysicalUnits.Millibar)).ValueAs(PhysicalUnits.CubicMetrePerHour);
+                var q2 = pipe10.CalcFlowRateByPressureDrop(water, new PhysicalValue(p, PhysicalUnits.Millibar)).ValueAs(PhysicalUnits.CubicMetrePerHour);
+                sw.WriteLine($"{p};{q1};{q2};{q1+q2}");
+            }
+
+
 
         }
     }
